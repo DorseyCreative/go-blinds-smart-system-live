@@ -13,6 +13,10 @@ const supabase = createClient(
 // This is the new, more robust data processing function
 async function processAndUpsertData(rows: any[][], header: string[]) {
   const aggregatedData: { [key: string]: any } = {};
+  const debugData = {
+    header: header,
+    firstRow: rows.length > 0 ? rows[0] : null
+  };
 
   // Step 1: Aggregate data by Work Order Number
   for (const row of rows) {
@@ -79,7 +83,7 @@ async function processAndUpsertData(rows: any[][], header: string[]) {
     }
   }
 
-  return processedCount;
+  return { processedCount, debugData };
 }
 
 
@@ -125,9 +129,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log(`Found ${rows.length} rows to aggregate.`);
     
     // Use the new processing function
-    const processedCount = await processAndUpsertData(rows, header);
+    const { processedCount, debugData } = await processAndUpsertData(rows, header);
     
-    return res.status(200).json({ message: `Sync complete. Processed ${rows.length} rows and upserted ${processedCount} unique orders.` });
+    return res.status(200).json({ 
+      message: `Sync complete. Processed ${rows.length} rows and upserted ${processedCount} unique orders.`,
+      debug: debugData // Return debug info in the response
+    });
 
   } catch (error: any) {
     console.error('Error during Google Sheets sync:', error.message);
