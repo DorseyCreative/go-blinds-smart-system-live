@@ -1,0 +1,245 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Setup Project Infrastructure",
+        "description": "Set up the initial project structure, including Node.js with TypeScript, Next.js, and Supabase integration.",
+        "details": "1. Initialize a new Node.js project with TypeScript\n2. Set up Next.js for the frontend\n3. Configure Supabase for database management\n4. Set up Vercel for deployment\n5. Initialize Git repository and set up CI/CD pipeline\n\nUse the following versions and configurations:\n- Node.js v16.x or later\n- TypeScript v4.9.x or later\n- Next.js v13.x (for app directory and server components)\n- @supabase/supabase-js v2.x\n- Vercel CLI for deployment\n\nCreate a basic project structure:\n```\n/\n├── src/\n│   ├── pages/\n│   ├── components/\n│   ├── lib/\n│   └── styles/\n├── public/\n├── tests/\n├── tsconfig.json\n├── next.config.js\n├── package.json\n└── .env (for environment variables)\n```",
+        "testStrategy": "1. Verify correct installation of all dependencies\n2. Test connection to Supabase\n3. Ensure successful build and deployment to Vercel\n4. Run TypeScript compiler to check for any configuration issues",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize Node.js project with TypeScript",
+            "description": "Set up a new Node.js project with TypeScript configuration",
+            "dependencies": [],
+            "details": "1. Create a new directory for the project\n2. Run 'npm init -y' to create package.json\n3. Install TypeScript: 'npm install typescript @types/node --save-dev'\n4. Create tsconfig.json with appropriate settings\n5. Update package.json scripts for TypeScript compilation",
+            "status": "pending",
+            "testStrategy": "Verify TypeScript compilation works without errors"
+          },
+          {
+            "id": 2,
+            "title": "Set up Next.js frontend",
+            "description": "Install and configure Next.js v13.x for the frontend",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Install Next.js: 'npm install next@13.x react react-dom'\n2. Set up basic Next.js project structure (pages, components, styles)\n3. Configure next.config.js\n4. Create a simple index page to test the setup\n5. Update package.json scripts for Next.js commands",
+            "status": "pending",
+            "testStrategy": "Run 'npm run dev' and verify the app loads correctly in the browser"
+          },
+          {
+            "id": 3,
+            "title": "Integrate Supabase",
+            "description": "Set up Supabase client and configure database connection",
+            "dependencies": [
+              2
+            ],
+            "details": "1. Install Supabase client: 'npm install @supabase/supabase-js@2.x'\n2. Create a Supabase project and database\n3. Set up environment variables for Supabase URL and API key\n4. Create a lib/supabaseClient.ts file to initialize Supabase client\n5. Test database connection with a simple query",
+            "status": "pending",
+            "testStrategy": "Write a test that connects to Supabase and performs a simple database operation"
+          },
+          {
+            "id": 4,
+            "title": "Configure Vercel deployment",
+            "description": "Set up Vercel CLI and prepare for deployment",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "1. Install Vercel CLI: 'npm install -g vercel'\n2. Login to Vercel CLI: 'vercel login'\n3. Configure project for Vercel: 'vercel init'\n4. Set up environment variables in Vercel dashboard\n5. Test deployment with 'vercel --prod'",
+            "status": "pending",
+            "testStrategy": "Deploy to Vercel and verify the application is accessible and functioning correctly"
+          },
+          {
+            "id": 5,
+            "title": "Set up Git and CI/CD",
+            "description": "Initialize Git repository and configure CI/CD pipeline",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "1. Initialize Git repository: 'git init'\n2. Create .gitignore file\n3. Make initial commit\n4. Create GitHub repository and push code\n5. Set up GitHub Actions for CI/CD (linting, testing, and automatic deployment to Vercel)",
+            "status": "pending",
+            "testStrategy": "Push changes to GitHub and verify that the CI/CD pipeline runs successfully"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Implement Smartsheet Integration",
+        "description": "Develop a module to monitor and parse data from a specific Smartsheet, triggering the order creation process upon detecting new or updated rows.",
+        "details": "1. Install and configure Smartsheet SDK: npm install smartsheet@2.x\n2. Set up a webhook to receive notifications for sheet changes\n3. Implement a function to fetch and parse new/updated rows\n4. Create a queue system for processing new entries (consider using Bull for Redis-based queue)\n5. Develop a parser to extract customer information and job specifications\n\nExample code structure:\n```typescript\nimport { Client } from 'smartsheet';\nimport Bull from 'bull';\n\nconst smartsheet = new Client({ accessToken: process.env.SMARTSHEET_TOKEN });\nconst orderQueue = new Bull('orderProcessing');\n\nasync function fetchNewRows(sheetId: string) {\n  const sheet = await smartsheet.sheets.getSheet({ id: sheetId });\n  // Logic to identify new rows\n  // Add new rows to the queue\n}\n\norderQueue.process(async (job) => {\n  // Process the new row data\n  // Trigger order creation\n});\n```",
+        "testStrategy": "1. Unit test the row parsing function with sample data\n2. Integration test with a test Smartsheet to ensure correct data fetching\n3. Test the queueing system to verify correct order of processing\n4. Implement error handling and test various error scenarios",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Develop Order Generation and Quoting System",
+        "description": "Create a system to generate customer orders in the Supabase database and calculate price quotes based on job specifications.",
+        "details": "1. Design and implement the database schema for orders in Supabase\n2. Develop functions to create new orders in the database\n3. Implement intelligent formulas for generating line items\n4. Create a pricing engine to calculate job duration and price quotes\n\nDatabase schema (example):\n```sql\nCREATE TABLE orders (\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\n  customer_name TEXT NOT NULL,\n  job_specifications JSONB NOT NULL,\n  estimated_duration INTERVAL NOT NULL,\n  price_quote DECIMAL(10, 2) NOT NULL,\n  status TEXT NOT NULL,\n  created_at TIMESTAMPTZ DEFAULT NOW(),\n  updated_at TIMESTAMPTZ DEFAULT NOW()\n);\n```\n\nPricing engine (pseudocode):\n```typescript\nfunction calculateQuote(jobSpecs: JobSpecifications): Quote {\n  const lineItems = generateLineItems(jobSpecs);\n  const duration = estimateJobDuration(lineItems);\n  const price = calculatePrice(lineItems, duration);\n  return { duration, price, lineItems };\n}\n```",
+        "testStrategy": "1. Unit test the pricing engine with various job specifications\n2. Integration test the order creation process with Supabase\n3. Benchmark the performance of the quoting system\n4. Implement and test edge cases (e.g., very large orders, unusual specifications)",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Implement Scheduling and Route Optimization",
+        "description": "Integrate with Google Calendar and Google Maps APIs to optimize appointment scheduling and travel routes.",
+        "details": "1. Set up Google Cloud project and enable necessary APIs\n2. Implement Google Calendar integration using google-auth-library and googleapis\n3. Integrate Google Maps API for travel time calculations\n4. Develop an algorithm for finding optimal appointment slots\n5. Implement route optimization for multiple appointments\n\nDependencies:\n```json\n{\n  \"@google-cloud/local-auth\": \"^2.1.0\",\n  \"googleapis\": \"^118.0.0\",\n  \"@googlemaps/google-maps-services-js\": \"^3.3.28\"\n}\n```\n\nExample scheduling algorithm:\n```typescript\nasync function findOptimalSlot(jobDuration: Duration, customerLocation: LatLng) {\n  const availableSlots = await fetchAvailableSlots();\n  const optimizedSlots = await Promise.all(availableSlots.map(async (slot) => {\n    const travelTime = await calculateTravelTime(previousLocation, customerLocation);\n    return { slot, score: scoreSlot(slot, jobDuration, travelTime) };\n  }));\n  return optimizedSlots.sort((a, b) => b.score - a.score)[0].slot;\n}\n```",
+        "testStrategy": "1. Unit test the scheduling algorithm with mock data\n2. Integration test with Google Calendar API using test calendar\n3. Test route optimization with various scenarios (e.g., multiple appointments, distant locations)\n4. Implement stress tests to ensure system can handle multiple concurrent scheduling requests",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Develop User Confirmation Workflow",
+        "description": "Create a system to send proposals to the business owner for approval via Slack and handle their responses.",
+        "details": "1. Set up Slack API integration using @slack/bolt package\n2. Develop a function to generate proposal summaries\n3. Implement Slack message sending with interactive buttons\n4. Create a webhook endpoint to receive Slack interaction payloads\n5. Develop logic to handle approval/rejection actions\n\nSlack message example:\n```typescript\nimport { App } from '@slack/bolt';\n\nconst app = new App({\n  token: process.env.SLACK_BOT_TOKEN,\n  signingSecret: process.env.SLACK_SIGNING_SECRET\n});\n\nasync function sendProposal(proposal: Proposal) {\n  await app.client.chat.postMessage({\n    channel: 'CHANNEL_ID',\n    text: `New proposal for ${proposal.customerName}`,\n    blocks: [\n      {\n        type: 'section',\n        text: {\n          type: 'mrkdwn',\n          text: `*Quote:* $${proposal.price}\\n*Duration:* ${proposal.duration}\\n*Scheduled for:* ${proposal.scheduledTime}`\n        }\n      },\n      {\n        type: 'actions',\n        elements: [\n          {\n            type: 'button',\n            text: { type: 'plain_text', text: 'Approve' },\n            style: 'primary',\n            action_id: 'approve_proposal'\n          },\n          {\n            type: 'button',\n            text: { type: 'plain_text', text: 'Reject' },\n            style: 'danger',\n            action_id: 'reject_proposal'\n          }\n        ]\n      }\n    ]\n  });\n}\n```",
+        "testStrategy": "1. Unit test proposal summary generation\n2. Integration test Slack message sending and receiving\n3. Test approval and rejection flows\n4. Implement error handling and test various failure scenarios (e.g., Slack API down)",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Implement Automated Customer Communication",
+        "description": "Develop a system to send SMS notifications to customers with job proposals using Twilio API.",
+        "details": "1. Set up Twilio account and obtain necessary credentials\n2. Install and configure Twilio SDK: npm install twilio@4.x\n3. Implement function to generate customer-friendly proposal messages\n4. Develop SMS sending functionality\n5. Create a system to track message delivery status\n\nExample Twilio integration:\n```typescript\nimport twilio from 'twilio';\n\nconst client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);\n\nasync function sendCustomerProposal(phoneNumber: string, proposal: Proposal) {\n  const message = `Your job is scheduled for ${proposal.scheduledTime}. Estimated price: $${proposal.price}. Reply YES to confirm or NO to reschedule.`;\n  \n  try {\n    const result = await client.messages.create({\n      body: message,\n      from: process.env.TWILIO_PHONE_NUMBER,\n      to: phoneNumber\n    });\n    return result.sid;\n  } catch (error) {\n    console.error('Failed to send SMS:', error);\n    throw error;\n  }\n}\n```",
+        "testStrategy": "1. Unit test message generation function\n2. Integration test with Twilio API using test credentials\n3. Test error handling for various scenarios (invalid phone numbers, API failures)\n4. Implement and test message delivery status tracking",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Develop AI-Powered Customer Interaction System",
+        "description": "Create an AI chatbot to handle customer responses and inquiries via SMS.",
+        "details": "1. Set up a Natural Language Processing (NLP) service (e.g., DialogFlow or custom solution with TensorFlow.js)\n2. Develop intent recognition for common customer responses (confirmation, rescheduling, questions)\n3. Implement conversation flow management\n4. Create a system to log and store conversation history in the database\n5. Integrate with the Twilio API for receiving and sending SMS\n\nExample using DialogFlow:\n```typescript\nimport dialogflow from '@google-cloud/dialogflow';\n\nconst sessionClient = new dialogflow.SessionsClient();\n\nasync function handleCustomerMessage(message: string, sessionId: string) {\n  const sessionPath = sessionClient.projectAgentSessionPath(process.env.DIALOGFLOW_PROJECT_ID, sessionId);\n  const request = {\n    session: sessionPath,\n    queryInput: {\n      text: {\n        text: message,\n        languageCode: 'en-US',\n      },\n    },\n  };\n  const responses = await sessionClient.detectIntent(request);\n  const result = responses[0].queryResult;\n  return {\n    intent: result.intent.displayName,\n    response: result.fulfillmentText,\n  };\n}\n```",
+        "testStrategy": "1. Unit test intent recognition with sample messages\n2. Integration test the entire conversation flow\n3. Test handling of unexpected or complex customer inquiries\n4. Verify correct storage of conversation logs in the database",
+        "priority": "medium",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Design and Implement Order Management Dashboard",
+        "description": "Create a web-based user interface for the business owner to view and manage customer orders.",
+        "details": "1. Design the dashboard layout and components using Figma or similar tool\n2. Implement the frontend using Next.js and React\n3. Create API endpoints for fetching and updating order data\n4. Implement search and filtering functionality\n5. Add ability to manually edit order details\n\nExample dashboard component:\n```typescript\nimport { useState, useEffect } from 'react';\nimport { supabase } from '../lib/supabaseClient';\n\nexport default function OrderDashboard() {\n  const [orders, setOrders] = useState([]);\n\n  useEffect(() => {\n    fetchOrders();\n  }, []);\n\n  async function fetchOrders() {\n    const { data, error } = await supabase\n      .from('orders')\n      .select('*')\n      .order('created_at', { ascending: false });\n    if (error) console.error('Error fetching orders:', error);\n    else setOrders(data);\n  }\n\n  return (\n    <div>\n      <h1>Order Dashboard</h1>\n      <table>\n        <thead>\n          <tr>\n            <th>ID</th>\n            <th>Customer</th>\n            <th>Status</th>\n            <th>Actions</th>\n          </tr>\n        </thead>\n        <tbody>\n          {orders.map(order => (\n            <tr key={order.id}>\n              <td>{order.id}</td>\n              <td>{order.customer_name}</td>\n              <td>{order.status}</td>\n              <td>\n                <button onClick={() => editOrder(order.id)}>Edit</button>\n              </td>\n            </tr>\n          ))}\n        </tbody>\n      </table>\n    </div>\n  );\n}\n```",
+        "testStrategy": "1. Conduct usability testing with mock data\n2. Unit test individual dashboard components\n3. Integration test API endpoints\n4. Test search and filtering functionality with large datasets\n5. Verify proper handling of concurrent edits",
+        "priority": "low",
+        "dependencies": [
+          1,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Implement Comprehensive Error Handling and Logging",
+        "description": "Develop a robust error handling and logging system across all components of the application.",
+        "details": "1. Implement a centralized error handling mechanism\n2. Set up application-wide logging using a library like winston\n3. Integrate error monitoring service (e.g., Sentry)\n4. Implement custom error classes for different types of errors\n5. Ensure all API endpoints have proper error responses\n\nExample error handling and logging setup:\n```typescript\nimport { createLogger, format, transports } from 'winston';\nimport * as Sentry from '@sentry/node';\n\n// Initialize Sentry\nSentry.init({\n  dsn: process.env.SENTRY_DSN,\n  environment: process.env.NODE_ENV\n});\n\n// Create Winston logger\nconst logger = createLogger({\n  level: 'info',\n  format: format.combine(\n    format.timestamp(),\n    format.json()\n  ),\n  transports: [\n    new transports.Console(),\n    new transports.File({ filename: 'error.log', level: 'error' }),\n    new transports.File({ filename: 'combined.log' })\n  ]\n});\n\n// Custom error class\nclass AppError extends Error {\n  constructor(message: string, public statusCode: number) {\n    super(message);\n    this.name = this.constructor.name;\n    Error.captureStackTrace(this, this.constructor);\n  }\n}\n\n// Error handling middleware\nfunction errorHandler(err, req, res, next) {\n  logger.error(err.message, { stack: err.stack });\n  Sentry.captureException(err);\n\n  if (err instanceof AppError) {\n    return res.status(err.statusCode).json({\n      status: 'error',\n      message: err.message\n    });\n  }\n\n  res.status(500).json({\n    status: 'error',\n    message: 'Internal server error'\n  });\n}\n```",
+        "testStrategy": "1. Unit test custom error classes\n2. Integration test error handling middleware\n3. Verify correct logging of errors across different components\n4. Test Sentry integration by triggering sample errors\n5. Ensure all API endpoints return appropriate error responses",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Perform System Integration and End-to-End Testing",
+        "description": "Integrate all components of the system and conduct comprehensive end-to-end testing.",
+        "details": "1. Set up a staging environment that mirrors production\n2. Develop end-to-end test scenarios covering the entire workflow\n3. Implement automated tests using a framework like Cypress\n4. Conduct manual testing to catch edge cases\n5. Perform load testing to ensure system can handle expected traffic\n\nExample Cypress test:\n```typescript\ndescribe('End-to-End Workflow', () => {\n  it('should process a new order from Smartsheet to customer confirmation', () => {\n    // Simulate new Smartsheet entry\n    cy.task('triggerSmartsheetWebhook', { rowData: {} });\n\n    // Check order created in database\n    cy.task('queryDatabase', { table: 'orders' }).should('have.length', 1);\n\n    // Verify Slack notification sent\n    cy.task('getLastSlackMessage').should('contain', 'New proposal');\n\n    // Simulate owner approval\n    cy.task('approveProposal', { orderId: 1 });\n\n    // Check SMS sent to customer\n    cy.task('getLastSmsMessage').should('contain', 'Your job is scheduled');\n\n    // Simulate customer confirmation\n    cy.task('sendCustomerSms', { message: 'YES' });\n\n    // Verify order status updated\n    cy.task('queryDatabase', { table: 'orders', where: { status: 'confirmed' } }).should('have.length', 1);\n  });\n});\n```",
+        "testStrategy": "1. Develop a comprehensive test plan covering all system components\n2. Implement automated end-to-end tests using Cypress\n3. Conduct manual testing focusing on edge cases and user experience\n4. Perform load testing using tools like Apache JMeter\n5. Test system recovery from various failure scenarios",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Implement Robust Unknown Line Item Code Handling",
+        "description": "Develop a system to gracefully handle unknown line item codes received from Smartsheet, logging them for review while ensuring system stability and providing a path for future resolution.",
+        "details": "1. Create a database table to log unknown line item codes:\n```sql\nCREATE TABLE unknown_line_item_codes (\n  id SERIAL PRIMARY KEY,\n  line_item_code VARCHAR(255) NOT NULL,\n  order_id VARCHAR(255),\n  customer_id VARCHAR(255),\n  context JSONB,\n  created_at TIMESTAMP DEFAULT NOW(),\n  resolved BOOLEAN DEFAULT FALSE,\n  resolution_notes TEXT,\n  resolution_date TIMESTAMP\n);\n```\n\n2. Implement a service to handle unknown codes:\n```typescript\nclass LineItemCodeHandler {\n  private knownCodes: Map<string, LineItemDetails>;\n  private notificationService: NotificationService;\n  private db: Database;\n\n  constructor(db: Database, notificationService: NotificationService) {\n    this.db = db;\n    this.notificationService = notificationService;\n    this.knownCodes = this.loadKnownCodes();\n  }\n\n  private loadKnownCodes(): Map<string, LineItemDetails> {\n    // Load codes from database or configuration\n    // Return as map for fast lookups\n  }\n\n  async handleLineItemCode(code: string, orderContext: OrderContext): Promise<LineItemDetails> {\n    // Check if code exists in known mapping\n    if (this.knownCodes.has(code)) {\n      return this.knownCodes.get(code);\n    }\n\n    // Log the unknown code\n    await this.logUnknownCode(code, orderContext);\n    \n    // Optionally notify admin\n    await this.notifyAdmin(code, orderContext);\n    \n    // Return default values\n    return {\n      price: 0,\n      duration: 0,\n      requiresReview: true,\n      isDefaultValue: true\n    };\n  }\n\n  private async logUnknownCode(code: string, context: OrderContext): Promise<void> {\n    try {\n      await this.db.query(\n        'INSERT INTO unknown_line_item_codes(line_item_code, order_id, customer_id, context) VALUES($1, $2, $3, $4)',\n        [code, context.orderId, context.customerId, JSON.stringify(context)]\n      );\n    } catch (error) {\n      console.error('Failed to log unknown line item code:', error);\n      // Don't throw - we want to continue processing even if logging fails\n    }\n  }\n\n  private async notifyAdmin(code: string, context: OrderContext): Promise<void> {\n    try {\n      const message = `Unknown line item code \"${code}\" detected in order ${context.orderId} for customer ${context.customerName}`;\n      await this.notificationService.sendNotification({\n        channel: 'admin-alerts',\n        message,\n        severity: 'warning',\n        data: { code, context }\n      });\n    } catch (error) {\n      console.error('Failed to send admin notification:', error);\n      // Don't throw - notification is optional\n    }\n  }\n}\n```\n\n3. Integrate with the Smartsheet parser in Task 2:\n```typescript\n// In the Smartsheet parser module\nimport { LineItemCodeHandler } from '../services/lineItemCodeHandler';\n\nclass SmartsheetParser {\n  private lineItemHandler: LineItemCodeHandler;\n  \n  constructor(lineItemHandler: LineItemCodeHandler) {\n    this.lineItemHandler = lineItemHandler;\n  }\n  \n  async parseRow(row: SmartsheetRow): Promise<Order> {\n    // Extract basic order information\n    const order = this.extractOrderInfo(row);\n    \n    // Process line items\n    for (const lineItemData of row.lineItems) {\n      try {\n        const code = lineItemData.code;\n        const lineItemDetails = await this.lineItemHandler.handleLineItemCode(\n          code, \n          { \n            orderId: order.id, \n            customerId: order.customerId,\n            customerName: order.customerName,\n            rowData: lineItemData\n          }\n        );\n        \n        // Add line item to order with appropriate flags\n        order.lineItems.push({\n          ...lineItemDetails,\n          code,\n          requiresReview: lineItemDetails.isDefaultValue || lineItemDetails.requiresReview\n        });\n        \n        // Flag the order if any line item requires review\n        if (lineItemDetails.isDefaultValue) {\n          order.requiresReview = true;\n        }\n      } catch (error) {\n        // Log error but continue processing other line items\n        console.error(`Error processing line item: ${error.message}`);\n        // Add a placeholder line item that's flagged for review\n        order.lineItems.push({\n          code: lineItemData.code || 'ERROR',\n          price: 0,\n          duration: 0,\n          requiresReview: true,\n          isDefaultValue: true,\n          processingError: true\n        });\n        order.requiresReview = true;\n      }\n    }\n    \n    return order;\n  }\n}\n```\n\n4. Create documentation for updating the mapping table:\n   - Document the process for reviewing unknown codes\n   - Provide instructions for adding new codes to the mapping table\n   - Include validation requirements for new codes\n   - Outline the approval process for new mappings\n\n5. Prepare for future admin UI:\n   - Design database queries to retrieve unknown codes\n   - Create API endpoints to fetch, update, and resolve unknown codes\n   - Document the API interface for the future UI implementation",
+        "testStrategy": "1. Unit Tests:\n   - Test the LineItemCodeHandler with known codes to verify correct mapping\n   - Test with unknown codes to ensure proper logging and default values\n   - Test error handling to confirm system stability\n   - Verify notification service integration with mocks\n\n2. Integration Tests:\n   - Test integration with the Smartsheet parser\n   - Verify database logging of unknown codes\n   - Test the complete workflow from Smartsheet data to order creation with unknown codes\n   - Ensure orders with unknown codes are properly flagged for review\n\n3. Database Tests:\n   - Verify unknown_line_item_codes table structure and constraints\n   - Test insertion of various code scenarios (null values, special characters, etc.)\n   - Test queries for retrieving unresolved codes\n\n4. Error Handling Tests:\n   - Simulate database connection failures during logging\n   - Test notification service failures\n   - Verify system continues processing even when components fail\n\n5. Performance Tests:\n   - Test handling of large batches of unknown codes\n   - Measure impact on order processing time\n   - Verify system performance under load\n\n6. End-to-End Tests:\n   - Create a test Smartsheet with known and unknown codes\n   - Verify complete workflow from Smartsheet to order creation\n   - Confirm all unknown codes are logged and orders are flagged appropriately",
+        "status": "pending",
+        "dependencies": [
+          2,
+          9
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Create Tangent Tracking System",
+        "description": "Implement a task list system to track tangents, side explorations, and offshoots from the main workflow automation project to ensure project focus and capture valuable insights.",
+        "details": "1. Design and implement a database schema for tracking tangents:\n```sql\nCREATE TABLE tangents (\n  id SERIAL PRIMARY KEY,\n  title TEXT NOT NULL,\n  summary TEXT NOT NULL,\n  exploration_reason TEXT NOT NULL,\n  outcomes TEXT,\n  follow_up_actions TEXT,\n  created_at TIMESTAMP DEFAULT NOW(),\n  updated_at TIMESTAMP DEFAULT NOW(),\n  status TEXT DEFAULT 'open',\n  related_task_id INTEGER REFERENCES tasks(id)\n);\n```\n\n2. Create an API endpoint for managing tangents:\n```typescript\n// API routes for tangent management\nimport { Router } from 'express';\nimport { supabase } from '../lib/supabaseClient';\n\nconst router = Router();\n\n// Get all tangents\nrouter.get('/tangents', async (req, res) => {\n  const { data, error } = await supabase\n    .from('tangents')\n    .select('*')\n    .order('created_at', { ascending: false });\n  \n  if (error) return res.status(500).json({ error });\n  return res.json(data);\n});\n\n// Create new tangent\nrouter.post('/tangents', async (req, res) => {\n  const { title, summary, exploration_reason, related_task_id } = req.body;\n  \n  if (!title || !summary || !exploration_reason) {\n    return res.status(400).json({ error: 'Missing required fields' });\n  }\n  \n  const { data, error } = await supabase\n    .from('tangents')\n    .insert([{ \n      title, \n      summary, \n      exploration_reason,\n      related_task_id: related_task_id || null\n    }])\n    .select();\n  \n  if (error) return res.status(500).json({ error });\n  return res.status(201).json(data[0]);\n});\n\n// Additional routes for updating, deleting, etc.\n```\n\n3. Develop a UI component for the dashboard to display and manage tangents:\n```tsx\nimport { useState, useEffect } from 'react';\nimport { supabase } from '../lib/supabaseClient';\n\nexport default function TangentTracker() {\n  const [tangents, setTangents] = useState([]);\n  const [newTangent, setNewTangent] = useState({\n    title: '',\n    summary: '',\n    exploration_reason: '',\n    related_task_id: null\n  });\n  \n  useEffect(() => {\n    fetchTangents();\n  }, []);\n  \n  async function fetchTangents() {\n    const { data, error } = await supabase\n      .from('tangents')\n      .select('*')\n      .order('created_at', { ascending: false });\n      \n    if (error) {\n      console.error('Error fetching tangents:', error);\n      return;\n    }\n    \n    setTangents(data || []);\n  }\n  \n  async function handleSubmit(e) {\n    e.preventDefault();\n    \n    const { data, error } = await supabase\n      .from('tangents')\n      .insert([newTangent])\n      .select();\n      \n    if (error) {\n      console.error('Error creating tangent:', error);\n      return;\n    }\n    \n    setTangents([data[0], ...tangents]);\n    setNewTangent({\n      title: '',\n      summary: '',\n      exploration_reason: '',\n      related_task_id: null\n    });\n  }\n  \n  return (\n    <div className=\"tangent-tracker\">\n      <h2>Project Tangents</h2>\n      \n      <form onSubmit={handleSubmit}>\n        {/* Form fields for new tangent */}\n        <button type=\"submit\">Log New Tangent</button>\n      </form>\n      \n      <div className=\"tangent-list\">\n        {tangents.map(tangent => (\n          <div key={tangent.id} className=\"tangent-card\">\n            <h3>{tangent.title}</h3>\n            <p><strong>Summary:</strong> {tangent.summary}</p>\n            <p><strong>Why explored:</strong> {tangent.exploration_reason}</p>\n            {tangent.outcomes && <p><strong>Outcomes:</strong> {tangent.outcomes}</p>}\n            {tangent.follow_up_actions && <p><strong>Follow-up:</strong> {tangent.follow_up_actions}</p>}\n            <p><strong>Status:</strong> {tangent.status}</p>\n            {/* Additional actions like update, resolve, etc. */}\n          </div>\n        ))}\n      </div>\n    </div>\n  );\n}\n```\n\n4. Implement a scheduled review system:\n   - Create a weekly notification to prompt review of the tangent list\n   - Add functionality to mark tangents as \"reviewed\" with timestamp\n   - Generate a summary report of all tangents for retrospective meetings\n\n5. Add integration with the main project management system:\n   - Link tangents to specific tasks when applicable\n   - Allow conversion of valuable tangents into formal tasks\n   - Implement tagging system for categorizing tangents\n\n6. Create a retrospective view that aggregates tangents by time period:\n```typescript\n// Function to generate retrospective report\nasync function generateTangentRetrospective(startDate, endDate) {\n  const { data, error } = await supabase\n    .from('tangents')\n    .select('*')\n    .gte('created_at', startDate)\n    .lte('created_at', endDate)\n    .order('created_at', { ascending: true });\n    \n  if (error) {\n    console.error('Error generating retrospective:', error);\n    return null;\n  }\n  \n  // Process data to generate insights\n  const categorizedTangents = categorizeByRelatedTask(data);\n  const timeSpentAnalysis = analyzeTimeImpact(data);\n  const valueAssessment = assessTangentValue(data);\n  \n  return {\n    period: { startDate, endDate },\n    tangentCount: data.length,\n    categorizedTangents,\n    timeSpentAnalysis,\n    valueAssessment,\n    recommendations: generateRecommendations(data)\n  };\n}",
+        "testStrategy": "1. Database Schema Testing:\n   - Verify the tangents table is created correctly with all required fields\n   - Test constraints and relationships with other tables\n   - Ensure proper indexing for efficient queries\n\n2. API Endpoint Testing:\n   - Unit test each API endpoint (GET, POST, PUT, DELETE) for tangent management\n   - Test validation of required fields\n   - Verify proper error handling for invalid requests\n   - Test authentication and authorization for accessing tangent data\n\n3. UI Component Testing:\n   - Test rendering of the tangent tracker component\n   - Verify form submission for creating new tangents\n   - Test filtering and sorting functionality\n   - Ensure responsive design works across different screen sizes\n   - Conduct usability testing with team members\n\n4. Integration Testing:\n   - Verify tangent data flows correctly between UI, API, and database\n   - Test linking tangents to existing tasks\n   - Ensure notifications for scheduled reviews work properly\n   - Test the retrospective report generation with various date ranges\n\n5. User Acceptance Testing:\n   - Have team members use the tangent tracking system during a sprint\n   - Collect feedback on usability and effectiveness\n   - Verify the system helps keep the project on track\n   - Test the process of converting tangents to formal tasks\n\n6. Performance Testing:\n   - Test system performance with a large number of tangent records\n   - Verify query optimization for retrospective report generation\n   - Ensure the UI remains responsive when displaying many tangents",
+        "status": "pending",
+        "dependencies": [
+          1,
+          8
+        ],
+        "priority": "medium",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-06-17T23:51:31.182Z",
+      "updated": "2025-06-18T00:44:09.131Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

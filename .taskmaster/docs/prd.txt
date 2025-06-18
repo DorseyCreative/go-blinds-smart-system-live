@@ -1,0 +1,60 @@
+# Product Requirements Document: Go Blinds Smart System
+
+## 1. Overview
+
+The project is a comprehensive workflow automation system for a smart blinds business. It will automate the process from customer order creation to scheduling, quoting, and customer communication. The system will be built as a web service for mobility and will integrate with several third-party APIs to achieve its goals.
+
+## 2. Core Features
+
+### 2.1. Data Ingestion from Smartsheet
+- The system must monitor a specific Smartsheet for new or updated rows.
+- Upon detecting a new entry, it should automatically trigger the order creation process.
+- It needs to parse column data from the sheet, including customer information and job specifications.
+
+### 2.2. Automated Quoting and Order Generation
+- A new customer order shall be created in the system's database (Supabase/Postgres).
+- The system will apply intelligent formulas to the raw data from Smartsheet to generate line items.
+- These line items will be used to calculate:
+    - The estimated on-site job duration.
+    - A price quote for the customer.
+
+### 2.3. Intelligent Scheduling and Route Optimization
+- The system must integrate with Google Calendar to access the user's availability.
+- It must use the Google Maps API to calculate driving times to the customer's location.
+- Based on job duration, user availability, and driving times, the system will find and suggest optimized appointment slots and travel routes.
+
+### 2.4. User Confirmation Workflow
+- The generated proposal (quote, optimized schedule, route) must be sent to the business owner for approval.
+- The notification should be delivered via a prompt (e.g., a Slack message) and include a summary of the proposal.
+- The user must be able to confirm or reject the proposal with a simple action.
+
+### 2.5. Automated Customer Communication
+- Upon confirmation by the business owner, the system will automatically send an SMS to the customer via an SMS API (e.g., Twilio).
+- The SMS will contain the job proposal (quote and scheduled time).
+
+### 2.6. AI-Powered Customer Interaction
+- The system will field SMS responses from the customer.
+- An AI chatbot will engage the customer to handle confirmation, requests for changes, or other inquiries.
+- The entire conversation log with the customer must be saved and associated with their order in the database.
+
+### 2.7. Order Management Dashboard
+- A web-based user interface will be developed for the business owner.
+- This dashboard will provide an "at-a-glance" view of all customer orders.
+- The user must be able to view, search, and manually edit order details through this interface.
+
+## 3. Technical Requirements
+
+- **Backend:** Node.js with TypeScript, deployed on Vercel.
+- **Database:** PostgreSQL managed by Supabase.
+- **Frontend:** Next.js (React) for the management dashboard.
+- **Testing:** Functions should be tested frequently throughout the development cycle to ensure reliability.
+- **Integrations:**
+    - Smartsheet API
+    - Google Maps API
+    - Google Calendar API
+    - Twilio API (or similar for SMS)
+    - Slack API (for internal notifications)
+
+## 4. User Profile
+- The primary user is the business owner/operator who will receive proposals and manage orders.
+- The secondary user is the end-customer who interacts with the system via SMS. 

@@ -1,0 +1,19 @@
+Unique line item types:
+BDC-addlhorizontals
+BDC-addlverticals
+BDC-corniceValance
+BDC-installation
+BDC-installover10feet
+BDC-masonrmetaltile
+BDC-measurement
+BDC-minimum
+BDC-motorized
+BDC-oversizevertical
+BDC-papertemplate
+BDC-sheerverticalinstall
+BDC-tripcharge
+BDC-windowRemoval
+BDC-windowtohaul
+BLIND/SHADE INSTALL-NAT
+CUSTOM LABOR
+HORIZONTAL BLINDS
