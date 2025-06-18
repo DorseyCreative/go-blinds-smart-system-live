@@ -111,6 +111,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({ message: 'Sheet is empty or missing a header row.' });
     }
 
+    // New, detailed logging
+    console.log("DEBUG: Header row received from Google Sheets:", header);
+    if (rows.length > 0) {
+      const firstRowData: { [key: string]: any } = {};
+      header.forEach((headerVal, index) => {
+        firstRowData[headerVal] = rows[0][index] || null;
+      });
+      console.log("DEBUG: Parsed data from first row:", firstRowData);
+    }
+    // End of new logging
+
     console.log(`Found ${rows.length} rows to aggregate.`);
     
     // Use the new processing function
