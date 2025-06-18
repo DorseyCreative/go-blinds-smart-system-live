@@ -25,7 +25,7 @@ async function processAndUpsertData(rows: any[][], header: string[]) {
       rowData[headerVal] = row[index] || null; // Use null for empty cells
     });
 
-    const workOrderNumber = rowData['Work Order #'];
+    const workOrderNumber = rowData['Work Order Number'];
     if (!workOrderNumber) {
       console.warn('Skipping row without a work order number:', row);
       continue;
@@ -35,17 +35,16 @@ async function processAndUpsertData(rows: any[][], header: string[]) {
       // If this is the first time we see this WO#, create a new entry
       aggregatedData[workOrderNumber] = {
         entry_date: rowData['Entry Date'],
-        customer_name: rowData['Customer'],
+        customer_name: rowData['Customer Name'],
         work_order_number: workOrderNumber,
-        po_number: rowData['PO #'],
+        po_number: rowData['PO Number'],
         phone_1: rowData['Phone 1'],
         email: rowData['Email'],
         address: rowData['Address'],
         city: rowData['City'],
         state: rowData['State'],
-        zip_code: rowData['Zip'],
-        status: rowData['Status'], // Correctly map the status
-        labor_to_do_items: [], // Initialize as an array
+        zip_code: rowData['Zip Code'],
+        labor_to_do_items: [], // 'status' field removed as it does not exist in the source
       };
     }
 
