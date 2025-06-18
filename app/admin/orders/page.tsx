@@ -17,8 +17,7 @@ export default function OrdersPage() {
     const { data, error } = await supabase
       .from('customer_orders')
       .select('*')
-      .order('created_at', { ascending: false })
-      .limit(20);
+      .order('created_at', { ascending: false });
     if (error) setError(error.message);
     setOrders(data || []);
     setLoading(false);
