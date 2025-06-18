@@ -13,16 +13,13 @@ const supabase = createClient(
 // This is the new, more robust data processing function
 async function processAndUpsertData(rows: any[][], header: string[]) {
   const aggregatedData: { [key: string]: any } = {};
-  const debugData = {
-    header: header,
-    firstRow: rows.length > 0 ? rows[0] : null
-  };
 
   // Step 1: Aggregate data by Work Order Number
   for (const row of rows) {
     const rowData: { [key: string]: any } = {};
     header.forEach((headerVal, index) => {
-      rowData[headerVal] = row[index] || null; // Use null for empty cells
+      // FIX: Trim whitespace from headers to prevent matching errors
+      rowData[headerVal.trim()] = row[index] || null;
     });
 
     const workOrderNumber = rowData['Work Order Number'];
@@ -82,7 +79,7 @@ async function processAndUpsertData(rows: any[][], header: string[]) {
     }
   }
 
-  return { processedCount, debugData };
+  return processedCount;
 }
 
 
@@ -114,25 +111,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({ message: 'Sheet is empty or missing a header row.' });
     }
 
-    // New, detailed logging
-    console.log("DEBUG: Header row received from Google Sheets:", header);
-    if (rows.length > 0) {
-      const firstRowData: { [key: string]: any } = {};
-      header.forEach((headerVal, index) => {
-        firstRowData[headerVal] = rows[0][index] || null;
-      });
-      console.log("DEBUG: Parsed data from first row:", firstRowData);
-    }
-    // End of new logging
-
     console.log(`Found ${rows.length} rows to aggregate.`);
     
     // Use the new processing function
-    const { processedCount, debugData } = await processAndUpsertData(rows, header);
+    const processedCount = await processAndUpsertData(rows, header);
     
     return res.status(200).json({ 
-      message: `Sync complete. Processed ${rows.length} rows and upserted ${processedCount} unique orders.`,
-      debug: debugData // Return debug info in the response
+      message: `Sync complete. Processed ${rows.length} rows and upserted ${processedCount} unique orders.`
     });
 
   } catch (error: any) {
