@@ -120,7 +120,7 @@ export default function OrdersPage() {
                   <td className="p-2">{order.customer_name}</td>
                   <td className="p-2">{order.work_order_number}</td>
                   <td className="p-2">{order.status}</td>
-                  <td className="p-2 truncate max-w-xs">{order.labor_to_do}</td>
+                  <td className="p-2 whitespace-pre-wrap">{order.labor_to_do}</td>
                   <td className="p-2 text-right">
                     <Link href={`/admin/orders/${order.id}`} className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-300">
                       Edit

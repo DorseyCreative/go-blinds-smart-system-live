@@ -1,60 +1,87 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { google } from 'googleapis';
+import credentials from '../../../lib/google-credentials.json';
 import { parseLineItems } from '../../../lib/parseLineItems';
 import { calculateJob } from '../../../lib/jobCalculations';
-import credentials from '../../../lib/google-credentials.json';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-async function processRow(row: any[], header: string[]) {
-  const rowData: { [key: string]: any } = {};
-  header.forEach((headerVal, index) => {
-    rowData[headerVal] = row[index];
-  });
+// This is the new, more robust data processing function
+async function processAndUpsertData(rows: any[][], header: string[]) {
+  const aggregatedData: { [key: string]: any } = {};
 
-  const mappedData = {
-    entry_date: rowData['Entry Date'],
-    customer_name: rowData['Customer Name'],
-    work_order_number: rowData['WO #'],
-    po_number: rowData['PO #'],
-    phone_1: rowData['Phone 1'],
-    email: rowData['Email'],
-    address: rowData['Address'],
-    city: rowData['City'],
-    state: rowData['State'],
-    zip_code: rowData['Zip'],
-    labor_to_do: rowData['Labor To Do'],
-    // Add any other fields you need from the sheet
-  };
+  // Step 1: Aggregate data by Work Order Number
+  for (const row of rows) {
+    const rowData: { [key: string]: any } = {};
+    header.forEach((headerVal, index) => {
+      rowData[headerVal] = row[index] || null; // Use null for empty cells
+    });
 
-  if (!mappedData.work_order_number) {
-    console.warn('Skipping row without a work order number:', row);
-    return;
+    const workOrderNumber = rowData['WO #'];
+    if (!workOrderNumber) {
+      console.warn('Skipping row without a work order number:', row);
+      continue;
+    }
+
+    if (!aggregatedData[workOrderNumber]) {
+      // If this is the first time we see this WO#, create a new entry
+      aggregatedData[workOrderNumber] = {
+        entry_date: rowData['Entry Date'],
+        customer_name: rowData['Customer Name'],
+        work_order_number: workOrderNumber,
+        po_number: rowData['PO #'],
+        phone_1: rowData['Phone 1'],
+        email: rowData['Email'],
+        address: rowData['Address'],
+        city: rowData['City'],
+        state: rowData['State'],
+        zip_code: rowData['Zip'],
+        status: rowData['Status'], // Correctly map the status
+        labor_to_do_items: [], // Initialize as an array
+      };
+    }
+
+    // Add the "Labor To Do" item to our array for this WO#
+    if (rowData['Labor To Do']) {
+      aggregatedData[workOrderNumber].labor_to_do_items.push(rowData['Labor To Do']);
+    }
   }
-  
-  const finalData: { [key: string]: any } = { ...mappedData };
 
-  finalData.line_items = parseLineItems(finalData.labor_to_do || '');
-  const { durationMinutes, quote, unknownLineItems } = await calculateJob(finalData.line_items);
-  finalData.duration_minutes = durationMinutes;
-  finalData.quote = quote;
+  // Step 2: Upsert each aggregated order into Supabase
+  let processedCount = 0;
+  for (const workOrderNumber in aggregatedData) {
+    const order = aggregatedData[workOrderNumber];
+    
+    // Join the labor items into a single, formatted string
+    order.labor_to_do = order.labor_to_do_items.join('\n');
+    delete order.labor_to_do_items; // Clean up the temporary array
 
-  const { error } = await supabase
-    .from('customer_orders')
-    .upsert(finalData, { onConflict: 'work_order_number' });
+    // Re-introduce the calculation logic
+    order.line_items = parseLineItems(order.labor_to_do || '');
+    const { durationMinutes, quote } = await calculateJob(order.line_items);
+    order.duration_minutes = durationMinutes;
+    order.quote = quote;
+    // We can decide how to handle unknown items later if needed
 
-  if (error) {
-    console.error('Supabase upsert error for WO#', finalData.work_order_number, ':', error.message);
-  } else {
-    console.log('Successfully processed and saved WO#', finalData.work_order_number);
+    const { error } = await supabase
+      .from('customer_orders')
+      .upsert(order, { onConflict: 'work_order_number' });
+
+    if (error) {
+      console.error('Supabase upsert error for WO#', workOrderNumber, ':', error.message);
+    } else {
+      console.log('Successfully upserted aggregated data for WO#', workOrderNumber);
+      processedCount++;
+    }
   }
-  
-  // You can still handle unknown line items if you wish
+
+  return processedCount;
 }
+
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -71,7 +98,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID!,
-      range: 'Ezra Dorsey', // Assumes data is on the first sheet, change if needed
+      range: 'Ezra Dorsey',
     });
     
     const rows = response.data.values;
@@ -79,17 +106,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({ message: 'No data found in sheet.' });
     }
 
-    const header = rows.shift(); // Get header row
+    const header = rows.shift(); 
     if (!header) {
       return res.status(200).json({ message: 'Sheet is empty or missing a header row.' });
     }
 
-    console.log(`Found ${rows.length} rows to process.`);
-    for (const row of rows) {
-      await processRow(row, header);
-    }
+    console.log(`Found ${rows.length} rows to aggregate.`);
     
-    return res.status(200).json({ message: `Sync complete. Processed ${rows.length} rows.` });
+    // Use the new processing function
+    const processedCount = await processAndUpsertData(rows, header);
+    
+    return res.status(200).json({ message: `Sync complete. Processed ${rows.length} rows and upserted ${processedCount} unique orders.` });
 
   } catch (error: any) {
     console.error('Error during Google Sheets sync:', error.message);
