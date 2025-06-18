@@ -21,7 +21,7 @@ async function processAndUpsertData(rows: any[][], header: string[]) {
       rowData[headerVal] = row[index] || null; // Use null for empty cells
     });
 
-    const workOrderNumber = rowData['WO #'];
+    const workOrderNumber = rowData['Work Order #'];
     if (!workOrderNumber) {
       console.warn('Skipping row without a work order number:', row);
       continue;
@@ -31,7 +31,7 @@ async function processAndUpsertData(rows: any[][], header: string[]) {
       // If this is the first time we see this WO#, create a new entry
       aggregatedData[workOrderNumber] = {
         entry_date: rowData['Entry Date'],
-        customer_name: rowData['Customer Name'],
+        customer_name: rowData['Customer'],
         work_order_number: workOrderNumber,
         po_number: rowData['PO #'],
         phone_1: rowData['Phone 1'],
