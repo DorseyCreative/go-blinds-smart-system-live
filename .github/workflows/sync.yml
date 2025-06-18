@@ -11,4 +11,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Call Vercel Sync Endpoint
-        run: 'curl -X POST -H "Authorization: Bearer ${{ secrets.VERCEL_AUTOMATION_TOKEN }}" https://go-blinds-smart-system.vercel.app/api/google-sheets/sync' 
+        run: 'curl -X POST -H "Authorization: Bearer ${{ secrets.VERCEL_AUTOMATION_TOKEN }}" https://go-blinds-smart-system-e7czjb003-ezras-projects-df8a8e1a.vercel.app/api/google-sheets/sync' 
