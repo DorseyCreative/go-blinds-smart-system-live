@@ -1,10 +1,10 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
+  "/admin/line-items/page": "app/admin/line-items/page.js",
   "/admin/alerts/page": "app/admin/alerts/page.js",
   "/admin/logs/page": "app/admin/logs/page.js",
-  "/admin/line-items/page": "app/admin/line-items/page.js",
+  "/admin/orders/page": "app/admin/orders/page.js",
   "/admin/settings/calendar/page": "app/admin/settings/calendar/page.js",
-  "/admin/orders/[id]/page": "app/admin/orders/[id]/page.js",
   "/page": "app/page.js",
-  "/admin/orders/page": "app/admin/orders/page.js"
+  "/admin/orders/[id]/page": "app/admin/orders/[id]/page.js"
 }

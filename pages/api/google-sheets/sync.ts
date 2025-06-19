@@ -13,13 +13,16 @@ const supabase = createClient(
 // This is the new, more robust data processing function
 async function processAndUpsertData(rows: any[][], header: string[]) {
   const aggregatedData: { [key: string]: any } = {};
+  const debugData = {
+    header: header,
+    firstRow: rows.length > 0 ? rows[0] : null
+  };
 
   // Step 1: Aggregate data by Work Order Number
   for (const row of rows) {
     const rowData: { [key: string]: any } = {};
     header.forEach((headerVal, index) => {
-      // FIX: Trim whitespace from headers to prevent matching errors
-      rowData[headerVal.trim()] = row[index] || null;
+      rowData[headerVal] = row[index] || null; // Use null for empty cells
     });
 
     const workOrderNumber = rowData['Work Order Number'];
@@ -30,8 +33,23 @@ async function processAndUpsertData(rows: any[][], header: string[]) {
 
     if (!aggregatedData[workOrderNumber]) {
       // If this is the first time we see this WO#, create a new entry
+      
+      // Fix for date format
+      const entryDateStr = rowData['Entry Date'];
+      let isoDate = null;
+      if (entryDateStr) {
+        const parts = entryDateStr.split('/');
+        if (parts.length === 3) {
+          // Assuming MM/DD/YY format from the sheet
+          const year = `20${parts[2]}`;
+          const month = parts[0].padStart(2, '0');
+          const day = parts[1].padStart(2, '0');
+          isoDate = `${year}-${month}-${day}`;
+        }
+      }
+
       aggregatedData[workOrderNumber] = {
-        entry_date: rowData['Entry Date'],
+        entry_date: isoDate,
         customer_name: rowData['Customer Name'],
         work_order_number: workOrderNumber,
         po_number: rowData['PO Number'],
@@ -74,12 +92,11 @@ async function processAndUpsertData(rows: any[][], header: string[]) {
     if (error) {
       console.error('Supabase upsert error for WO#', workOrderNumber, ':', error.message);
     } else {
-      console.log('Successfully upserted aggregated data for WO#', workOrderNumber);
       processedCount++;
     }
   }
 
-  return processedCount;
+  return { processedCount };
 }
 
 
@@ -110,14 +127,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!header) {
       return res.status(200).json({ message: 'Sheet is empty or missing a header row.' });
     }
-
-    console.log(`Found ${rows.length} rows to aggregate.`);
     
     // Use the new processing function
-    const processedCount = await processAndUpsertData(rows, header);
+    const { processedCount } = await processAndUpsertData(rows, header);
     
     return res.status(200).json({ 
-      message: `Sync complete. Processed ${rows.length} rows and upserted ${processedCount} unique orders.`
+      message: `Sync complete. Processed ${rows.length + 1} rows and upserted ${processedCount} unique orders.`
     });
 
   } catch (error: any) {
