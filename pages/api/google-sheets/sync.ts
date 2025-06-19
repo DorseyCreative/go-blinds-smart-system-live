@@ -10,12 +10,47 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// This is the new, more robust data processing function
-async function processAndUpsertData(rows: any[][], header: string[]) {
+// Helper function to parse dates, assuming MM/DD/YY format
+const parseDate = (dateStr: string | null): string | null => {
+  if (!dateStr) return null;
+  const parts = dateStr.split('/');
+  if (parts.length === 3) {
+    const [month, day, year] = parts.map(p => parseInt(p, 10));
+    // Handles '25' -> 2025
+    const fullYear = year < 100 ? 2000 + year : year;
+    // Format to YYYY-MM-DD
+    return `${fullYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+  return null; // Return null if format is unexpected
+};
+
+// This function aggregates the raw rows from the sheet into a structured format
+async function aggregateAndUpsert(rows: any[][], header: string[]) {
   const aggregatedData: { [key: string]: any } = {};
-  const debugData = {
-    header: header,
-    firstRow: rows.length > 0 ? rows[0] : null
+
+  // This maps Google Sheet headers to your database columns.
+  // It's the new "source of truth" for what data to pull.
+  const columnMap: { [key: string]: string } = {
+    'Customer Name': 'customer_name',
+    'Work Order Number': 'work_order_number',
+    'PO Number': 'po_number',
+    'Phone 1': 'phone_1',
+    'Phone 2': 'phone_2',
+    'Phone 3': 'phone_3',
+    'Email': 'email',
+    'Address': 'address',
+    'Apt / Unit Number': 'apt_unit_number',
+    'City': 'city',
+    'State': 'state',
+    'Zip Code': 'zip_code',
+    'Store Number': 'store_number',
+    'Job Type': 'job_type',
+    'Instructions': 'instructions',
+    'Materials': 'materials',
+    'Time Window': 'time_window',
+    'Last Note Made': 'last_note_made',
+    'Latest Comment': 'latest_comment',
+    // We handle date and labor fields separately below
   };
 
   // Step 1: Aggregate data by Work Order Number
@@ -26,66 +61,53 @@ async function processAndUpsertData(rows: any[][], header: string[]) {
     });
 
     const workOrderNumber = rowData['Work Order Number'];
+
     if (!workOrderNumber) {
-      console.warn('Skipping row without a work order number:', row);
       continue;
     }
 
     if (!aggregatedData[workOrderNumber]) {
-      // If this is the first time we see this WO#, create a new entry
+      // Create a clean object with only the columns that exist in the database
+      const newOrder: { [key: string]: any } = {};
       
-      // Fix for date format
-      const entryDateStr = rowData['Entry Date'];
-      let isoDate = null;
-      if (entryDateStr) {
-        const parts = entryDateStr.split('/');
-        if (parts.length === 3) {
-          // Assuming MM/DD/YY format from the sheet
-          const year = `20${parts[2]}`;
-          const month = parts[0].padStart(2, '0');
-          const day = parts[1].padStart(2, '0');
-          isoDate = `${year}-${month}-${day}`;
-        }
+      // Map all the simple text fields first
+      for (const sheetHeader in columnMap) {
+        newOrder[columnMap[sheetHeader]] = rowData[sheetHeader] || null;
       }
 
-      // Create a clean object with only the columns that exist in the database
-      aggregatedData[workOrderNumber] = {
-        entry_date: isoDate,
-        customer_name: rowData['Customer Name'],
-        work_order_number: workOrderNumber,
-        po_number: rowData['PO Number'],
-        phone_1: rowData['Phone 1'],
-        email: rowData['Email'],
-        address: rowData['Address'],
-        city: rowData['City'],
-        state: rowData['State'],
-        zip_code: rowData['Zip Code'],
-        labor_to_do_items: [], // This is a temporary field for aggregation
-      };
+      // Handle all date fields explicitly
+      newOrder['entry_date'] = parseDate(rowData['Entry Date']);
+      newOrder['date_order_sent_to_installer'] = parseDate(rowData['Date order sent to installer']);
+      newOrder['material_arrival_date'] = parseDate(rowData['Material Arrival Date']);
+      newOrder['schedule_date'] = parseDate(rowData['Schedule Date']);
+
+      newOrder.labor_to_do_items = []; // This is a temporary field for aggregation
+      aggregatedData[workOrderNumber] = newOrder;
     }
 
     // Add the "Labor To Do" item to our array for this WO#
-    if (rowData['Labor To Do']) {
-      aggregatedData[workOrderNumber].labor_to_do_items.push(rowData['Labor To Do']);
+    const laborItem = rowData['Labor To Do'];
+    if (laborItem && typeof laborItem === 'string' && laborItem.trim() !== '') {
+      aggregatedData[workOrderNumber].labor_to_do_items.push(laborItem);
     }
   }
 
-  // Step 2: Upsert each aggregated order into Supabase
   let processedCount = 0;
+
+  // Step 2: Calculate derivative fields and upsert to Supabase
   for (const workOrderNumber in aggregatedData) {
     const order = aggregatedData[workOrderNumber];
     
     // Join the labor items into a single, formatted string
     order.labor_to_do = order.labor_to_do_items.join('\n');
-    delete order.labor_to_do_items; // Clean up the temporary array
+    delete order.labor_to_do_items; // Clean up temp field
 
-    // Re-introduce the calculation logic
+    // --- Revert to original, working calculation logic ---
     order.line_items = parseLineItems(order.labor_to_do || '');
     const { durationMinutes, quote } = await calculateJob(order.line_items);
     order.duration_minutes = durationMinutes;
     order.quote = quote;
-    // We can decide how to handle unknown items later if needed
-
+    
     const { error } = await supabase
       .from('customer_orders')
       .upsert(order, { onConflict: 'work_order_number' });
@@ -130,7 +152,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     
     // Use the new processing function
-    const { processedCount } = await processAndUpsertData(rows, header);
+    const { processedCount } = await aggregateAndUpsert(rows, header);
     
     return res.status(200).json({ 
       message: `Sync complete. Processed ${rows.length + 1} rows and upserted ${processedCount} unique orders.`
