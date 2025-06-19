@@ -85,16 +85,31 @@ async function aggregateAndUpsert(rows: any[][], header: string[]) {
       // Create a clean object with only the columns that exist in the database
       const newOrder: { [key: string]: any } = {};
       
-      // Map all fields using the comprehensive columnMap
-      for (const sheetHeader in columnMap) {
-        const dbColumn = columnMap[sheetHeader];
-        const value = rowData[sheetHeader] || null;
+      // Dynamically handle date columns
+      const dateColumns = [
+        'entry_date', 
+        'date_order_sent_to_installer', 
+        'material_arrival_date', 
+        'schedule_date', 
+        'date_of_status_change', 
+        'billed_date', 
+        'payment_date'
+      ];
 
-        // Check if the column is a date field and parse it
-        if (dbColumn.includes('date')) {
-          newOrder[dbColumn] = parseDate(value);
+      for (const sheetHeader in columnMap) {
+        const dbCol = columnMap[sheetHeader];
+        const sheetValue = rowData[sheetHeader] || null;
+
+        if (dateColumns.includes(dbCol)) {
+          if (sheetValue && typeof sheetValue === 'string' && /^\d{1,2}\/\d{1,2}\/\d{2}$/.test(sheetValue)) {
+            const parts = sheetValue.split('/');
+            // Assuming MM/DD/YY format
+            newOrder[dbCol] = `20${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+          } else {
+            newOrder[dbCol] = null; // Set to null if format is invalid or value is missing
+          }
         } else {
-          newOrder[dbColumn] = value;
+          newOrder[dbCol] = sheetValue;
         }
       }
 
