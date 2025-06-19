@@ -48,6 +48,7 @@ async function processAndUpsertData(rows: any[][], header: string[]) {
         }
       }
 
+      // Create a clean object with only the columns that exist in the database
       aggregatedData[workOrderNumber] = {
         entry_date: isoDate,
         customer_name: rowData['Customer Name'],
@@ -59,7 +60,7 @@ async function processAndUpsertData(rows: any[][], header: string[]) {
         city: rowData['City'],
         state: rowData['State'],
         zip_code: rowData['Zip Code'],
-        labor_to_do_items: [], // 'status' field removed as it does not exist in the source
+        labor_to_do_items: [], // This is a temporary field for aggregation
       };
     }
 
