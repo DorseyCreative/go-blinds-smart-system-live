@@ -121,6 +121,32 @@ async function aggregateAndUpsert(rows: any[][], header: string[]) {
       delete order.labor_to_do_items; // Clean up temp field
     }
     
+    // --- START IN-FLIGHT VERIFICATION ---
+    const { data: existingOrder, error: fetchError } = await supabase
+      .from('customer_orders')
+      .select('*')
+      .eq('work_order_number', workOrderNumber)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') { // Ignore "no rows found"
+      console.error(`Error fetching WO#${workOrderNumber} for verification`, fetchError);
+    }
+
+    if (existingOrder) {
+      console.log(`--- Verifying WO# ${workOrderNumber} ---`);
+      for (const key in order) {
+        if (Object.prototype.hasOwnProperty.call(order, key) && key !== 'line_items') {
+          const sheetVal = order[key] || null;
+          const dbVal = existingOrder[key] || null;
+          if (String(sheetVal) !== String(dbVal)) {
+            console.log(`  - Mismatch on '${key}': Sheet val is "${sheetVal}", DB val is "${dbVal}"`);
+          }
+        }
+      }
+      console.log(`--- End Verification for WO# ${workOrderNumber} ---`);
+    }
+    // --- END IN-FLIGHT VERIFICATION ---
+
     // --- Revert to original, working calculation logic ---
     order.line_items = parseLineItems(order.labor_to_do || '');
     const { durationMinutes, quote } = await calculateJob(order.line_items);
