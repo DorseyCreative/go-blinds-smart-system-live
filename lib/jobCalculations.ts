@@ -34,28 +34,27 @@ export async function calculateJobDuration(laborToDo: string): Promise<number> {
     return durationMinutes;
 }
 
-export async function calculateJob(lineItems: LineItem[]) {
+export async function calculateJob(lineItems: LineItem[]): Promise<{ durationMinutes: number, quote: number }> {
+  let durationMinutes = 0;
   let quote = 0;
-  const unknownLineItems: LineItem[] = [];
+
   const catalog = await getCatalog();
   
-  if (!catalog.length) {
-    // Fallback: treat all as unknown
-    return { durationMinutes: 0, quote: 0, unknownLineItems: lineItems };
+  if (!catalog || catalog.length === 0) {
+    console.log('Line item catalog is empty. Fetching from Supabase...');
+    await getCatalog();
   }
-
-  let durationMinutes = 0;
 
   for (const item of lineItems) {
-    const match = catalog.find(entry =>
-      item.description.toLowerCase().includes(entry.code.toLowerCase())
-    );
-    if (match) {
-      durationMinutes += match.duration_minutes * item.quantity;
-      quote += Number(match.price) * item.quantity;
+    const catalogItem = catalog.find(catItem => catItem.code === item.description);
+
+    if (catalogItem) {
+      durationMinutes += (catalogItem.duration_minutes || 0) * item.quantity;
+      quote += (catalogItem.price || 0) * item.quantity;
     } else {
-      unknownLineItems.push(item);
+      console.warn(`[CATALOG_MISS] Line item code not found in catalog: "${item.description}"`);
     }
   }
-  return { durationMinutes, quote, unknownLineItems };
+
+  return { durationMinutes, quote };
 } 
