@@ -30,3 +30,23 @@ node_modules/
 # Production credentials - DO NOT COMMIT
 /lib/google-credentials.json
 .vercel
+
+# Node.js
+.npm
+pnpm-debug.log*
+lerna-debug.log*
+
+# Next.js
+.next/
+out/
+
+# Vercel
+.vercel/
+
+# TypeScript
+*.tsbuildinfo
+
+# Local scripts
+scripts/final_verification.ts
+scripts/verifyData.ts
+scripts/testCalculationLogic.ts
