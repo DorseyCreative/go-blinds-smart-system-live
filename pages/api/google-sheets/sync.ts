@@ -50,7 +50,22 @@ async function aggregateAndUpsert(rows: any[][], header: string[]) {
     'Time Window': 'time_window',
     'Last Note Made': 'last_note_made',
     'Latest Comment': 'latest_comment',
-    // We handle date and labor fields separately below
+    'Entry Date': 'entry_date',
+    'Date order sent to installer': 'date_order_sent_to_installer',
+    'Material Arrival Date': 'material_arrival_date',
+    'Schedule Date': 'schedule_date',
+    'Labor To Do': 'labor_to_do',
+    'Installer': 'installer',
+    'Status': 'status',
+    'Date of Status Change': 'date_of_status_change',
+    'Chargeback': 'chargeback',
+    'Chargeback Amount': 'chargeback_amount',
+    'Invoice Number': 'invoice_number',
+    'Billed Date': 'billed_date',
+    'Payment Date': 'payment_date',
+    'Payment Amount': 'payment_amount',
+    'Check Number': 'check_number',
+    'Notes': 'notes'
   };
 
   // Step 1: Aggregate data by Work Order Number
@@ -70,16 +85,18 @@ async function aggregateAndUpsert(rows: any[][], header: string[]) {
       // Create a clean object with only the columns that exist in the database
       const newOrder: { [key: string]: any } = {};
       
-      // Map all the simple text fields first
+      // Map all fields using the comprehensive columnMap
       for (const sheetHeader in columnMap) {
-        newOrder[columnMap[sheetHeader]] = rowData[sheetHeader] || null;
-      }
+        const dbColumn = columnMap[sheetHeader];
+        const value = rowData[sheetHeader] || null;
 
-      // Handle all date fields explicitly
-      newOrder['entry_date'] = parseDate(rowData['Entry Date']);
-      newOrder['date_order_sent_to_installer'] = parseDate(rowData['Date order sent to installer']);
-      newOrder['material_arrival_date'] = parseDate(rowData['Material Arrival Date']);
-      newOrder['schedule_date'] = parseDate(rowData['Schedule Date']);
+        // Check if the column is a date field and parse it
+        if (dbColumn.includes('date')) {
+          newOrder[dbColumn] = parseDate(value);
+        } else {
+          newOrder[dbColumn] = value;
+        }
+      }
 
       newOrder.labor_to_do_items = []; // This is a temporary field for aggregation
       aggregatedData[workOrderNumber] = newOrder;
@@ -99,9 +116,11 @@ async function aggregateAndUpsert(rows: any[][], header: string[]) {
     const order = aggregatedData[workOrderNumber];
     
     // Join the labor items into a single, formatted string
-    order.labor_to_do = order.labor_to_do_items.join('\n');
-    delete order.labor_to_do_items; // Clean up temp field
-
+    if (order.labor_to_do_items) {
+      order.labor_to_do = order.labor_to_do_items.join('\n');
+      delete order.labor_to_do_items; // Clean up temp field
+    }
+    
     // --- Revert to original, working calculation logic ---
     order.line_items = parseLineItems(order.labor_to_do || '');
     const { durationMinutes, quote } = await calculateJob(order.line_items);
